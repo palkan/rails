@@ -69,7 +69,8 @@ class ActionCable::Connection::ClientSocketTest < ActionCable::TestCase
         begin
           Socket.pair(Socket::AF_UNIX, Socket::SOCK_STREAM, 0).first
         rescue
-          StringIO.new
+          # Use io writer
+          IO.pipe.last
         end
       env["rack.hijack"] = -> { env["rack.hijack_io"] = io }
 
