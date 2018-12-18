@@ -10,6 +10,9 @@ class RedisAdapterTest < ActionCable::TestCase
   include CommonSubscriptionAdapterTest
   include ChannelPrefixTest
 
+  def setup; skip; super; end
+  def teardown; end
+
   def cable_config
     { adapter: "redis", driver: "ruby" }.tap do |x|
       if host = URI(ENV["REDIS_URL"] || "").hostname
