@@ -1,0 +1,33 @@
+version: '3'
+services:
+  app: &app
+    build: .
+    image: rails:6.0.0-dev0
+    volumes:
+      - .:/app:cached
+    tmpfs:
+      - /tmp
+  runner:
+    <<: *app
+    volumes:
+      - .:/app:cached
+      - bundle:/bundle
+    environment:
+      - REDIS_URL=redis://redis:6379/
+      - DATABASE_URL=postgres://postgres:postgres@postgres/
+  postgres:
+    image: postgres:10
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - 5432
+  redis:
+    image: redis:4.0-alpine
+    volumes:
+      - redis:/data
+    ports:
+      - 6379
+volumes:
+  postgres:
+  redis:
+  bundle:
