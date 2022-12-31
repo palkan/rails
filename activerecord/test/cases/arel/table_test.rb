@@ -127,6 +127,12 @@ module Arel
         rel = Table.new :users, as: "users"
         _(rel.table_alias).must_be_nil
       end
+
+      it "should accept SqlLiteral and preserve it"  do
+        rel = Table.new Arel.sql("generate_series(4, 2)")
+        manager = rel.project(Arel.star)
+        _(manager.to_sql).must_be_like %{ SELECT * FROM generate_series(4, 2) }
+      end
     end
 
     describe "order" do

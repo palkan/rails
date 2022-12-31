@@ -14,7 +14,8 @@ module Arel # :nodoc: all
     alias :table_name :name
 
     def initialize(name, as: nil, klass: nil, type_caster: klass&.type_caster)
-      @name = name.to_s
+      @name = name
+      @name = @name.to_s unless Nodes::SqlLiteral === @name
       @klass = klass
       @type_caster = type_caster
 
