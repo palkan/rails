@@ -146,7 +146,7 @@ module ActiveRecord
     def sum(identity_or_column = nil, &block)
       if block_given?
         values = map(&block)
-        if identity_or_column.nil? && (values.first.is_a?(Numeric) || values.first(1) == [])
+        if identity_or_column.nil? && (values.first.is_a?(Numeric) || values.first(1) == [] || values.first.respond_to?(:coerce))
           identity_or_column = 0
         end
 
@@ -491,9 +491,10 @@ module ActiveRecord
           end
 
           key_types = group_columns.each_with_object({}) do |(aliaz, col_name), types|
-            types[aliaz] = type_for(col_name) do
-              calculated_data.column_types.fetch(aliaz, Type.default_value)
-            end
+            types[aliaz] = col_name.try(:type_caster) ||
+              type_for(col_name) do
+                calculated_data.column_types.fetch(aliaz, Type.default_value)
+              end
           end
 
           hash_rows = calculated_data.cast_values(key_types).map! do |row|

@@ -14,7 +14,7 @@ gem "rake", ">= 13"
 
 gem "sprockets-rails", ">= 2.0.0"
 gem "propshaft", ">= 0.1.7"
-gem "capybara", ">= 3.26"
+gem "capybara", ">= 3.38"
 gem "selenium-webdriver", ">= 4.0.0"
 
 gem "rack-cache", "~> 1.2"
@@ -48,7 +48,7 @@ group :rubocop do
 end
 
 group :doc do
-  gem "sdoc", ">= 2.5.0"
+  gem "sdoc", ">= 2.6.0"
   gem "redcarpet", "~> 3.2.3", platforms: :ruby
   gem "w3c_validators", "~> 1.3.6"
   gem "rouge"
@@ -67,6 +67,10 @@ gem "bootsnap", ">= 1.4.4", require: false
 gem "webrick", require: false
 gem "jbuilder", require: false
 gem "web-console", require: false
+
+# Action Pack and railties
+rack_version = ENV.fetch("RACK", "~> 2.0") # Change to ~> 3 after #46594 is merged.
+gem "rack", rack_version
 
 # Active Job
 group :job do
@@ -108,12 +112,6 @@ gem "webmock"
 
 group :ujs do
   gem "webdrivers"
-end
-
-# Action View
-group :view do
-  gem "blade", require: false, platforms: [:ruby]
-  gem "sprockets-export", require: false
 end
 
 # Add your own local bundler stuff.

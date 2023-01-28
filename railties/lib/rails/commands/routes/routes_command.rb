@@ -10,14 +10,17 @@ module Rails
       class_option :expanded, type: :boolean, aliases: "-E", desc: "Print routes expanded vertically with parts explained."
       class_option :unused, type: :boolean, aliases: "-u", desc: "Print unused routes."
 
-      def invoke_command(*)
-        if options.key?("unused")
-          Rails::Command.invoke "unused_routes", ARGV
-        else
-          super
+      no_commands do
+        def invoke_command(*)
+          if options.key?("unused")
+            Rails::Command.invoke "unused_routes", ARGV
+          else
+            super
+          end
         end
       end
 
+      desc "routes", "Lists all the defined routes"
       def perform(*)
         require_application_and_environment!
         require "action_dispatch/routing/inspector"

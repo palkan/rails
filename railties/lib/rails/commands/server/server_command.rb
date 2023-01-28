@@ -6,6 +6,7 @@ require "rails"
 require "active_support/core_ext/string/filters"
 require "rails/dev_caching"
 require "rails/command/environment_argument"
+require "rack/server"
 
 module Rails
   class Server < ::Rack::Server
@@ -128,7 +129,6 @@ module Rails
       end
 
       def perform
-        extract_environment_option_from_argument
         set_application_directory!
         prepare_restart
 

@@ -194,6 +194,10 @@ be set to `false` if application code is not thread safe. Defaults to `true`.
 
 Sets the host for the assets. Useful when CDNs are used for hosting assets, or when you want to work around the concurrency constraints built-in in browsers using different domain aliases. Shorter version of `config.action_controller.asset_host`.
 
+#### `config.assume_ssl`
+
+Makes application believe that all requests are arring over SSL. This is useful when proxying through a load balancer that terminates SSL, the forwarded request will appear as though its HTTP instead of HTTPS to the application. This makes redirects and cookie security target HTTP instead of HTTPS. This middleware makes the server assume that the proxy already terminated SSL, and that the request really is HTTPS.
+
 #### `config.autoflush_log`
 
 Enables writing log file output immediately instead of buffering. Defaults to
@@ -256,11 +260,23 @@ Guide
 
 #### `config.credentials.content_path`
 
-Configures lookup path for encrypted credentials.
+The path of the encrypted credentials file.
+
+Defaults to `config/credentials/#{Rails.env}.yml.enc` if it exists, or
+`config/credentials.yml.enc` otherwise.
+
+NOTE: In order for the `bin/rails credentials` commands to recognize this value,
+it must be set in `config/application.rb`.
 
 #### `config.credentials.key_path`
 
-Configures lookup path for encryption key.
+The path of the encrypted credentials key file.
+
+Defaults to `config/credentials/#{Rails.env}.key` if it exists, or
+`config/master.key` otherwise.
+
+NOTE: In order for the `bin/rails credentials` commands to recognize this value,
+it must be set in `config/application.rb`.
 
 #### `config.debug_exception_response_format`
 
@@ -813,8 +829,7 @@ Sets the path Rails uses to look for locale files. Defaults to `config/locales/*
 
 #### `config.i18n.raise_on_missing_translations`
 
-Determines whether an error should be raised for missing translations
-in controllers and views. This defaults to `false`.
+Determines whether an error should be raised for missing translations. This defaults to `false`.
 
 #### `config.i18n.fallbacks`
 
@@ -945,6 +960,46 @@ Specifies if an error should be raised if the order of a query is ignored during
 #### `config.active_record.timestamped_migrations`
 
 Controls whether migrations are numbered with serial integers or with timestamps. The default is `true`, to use timestamps, which are preferred if there are multiple developers working on the same application.
+
+#### `config.active_record.db_warnings_action`
+
+Controls the action to be taken when a SQL query produces a warning. The following options are available:
+
+  * `:ignore` - Database warnings wil be ignored. This is the default.
+
+  * `:log` - Database warnings will be logged via `ActiveRecord.logger` at the `:warn` level.
+
+  * `:raise` - Database warnings will be raised as `ActiveRecord::SQLWarning`.
+
+  * `:report` - Database warnings be will reported to subscribers of Rails' error reporter.
+
+  * Custom proc - A custom proc can be provided. It should accept a `SQLWarning` error object.
+
+    For example:
+
+    ```ruby
+    config.active_record.db_warnings_action = ->(warning) do
+      # Report to custom exception reporting service
+      Bugsnag.notify(warning.message) do |notification|
+        notification.add_metadata(:warning_code, warning.code)
+        notification.add_metadata(:warning_level, warning.level)
+      end
+    end
+    ```
+
+#### `config.active_record.db_warnings_ignore`
+
+Specifies an allowlist of warnings that will be ignored, regardless of the configured `db_warnings_action`.
+The default behavior is to report all warnings. Warnings to ignore can be specified as Strings or Regexps. For example:
+
+  ```ruby
+  config.active_record.db_warnings_action = :raise
+  # The following warnings will not be raised
+  config.active_record.db_warnings_ignore = [
+    /Invalid utf8mb4 character string/,
+    "An exact warning message",
+  ]
+  ```
 
 #### `config.active_record.migration_strategy`
 
@@ -1288,6 +1343,12 @@ Defaults to `[Symbol]`. Allows applications to include additional permitted clas
 #### `config.active_record.use_yaml_unsafe_load`
 
 Defaults to `false`. Allows applications to opt into using `unsafe_load` on the `ActiveRecord::Coders::YAMLColumn`.
+
+#### `config.active_record.raise_int_wider_than_64bit`
+
+Defaults to `true`. Determines whether to raise an exception or not when
+the PostgreSQL adapter is provided an integer that is wider than signed
+64bit representation.
 
 #### `ActiveRecord::ConnectionAdapters::Mysql2Adapter.emulate_booleans`
 
@@ -2284,7 +2345,7 @@ The default value depends on the `config.load_defaults` target version:
 
 | Starting with version | The default value is |
 | --------------------- | -------------------- |
-| 7.0                   | `false`              |
+| (original)            | `false`              |
 | 7.1                   | `true`               |
 
 ### Configuring Active Job

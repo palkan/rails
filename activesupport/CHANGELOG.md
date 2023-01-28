@@ -1,3 +1,88 @@
+*   `config.i18n.raise_on_missing_translations = true` now raises on any missing translation.
+
+    Previously it would only raise when called in a view or controller. Now it will raise
+    anytime `I18n.t` is provided an unrecognised key.
+
+    If you do not want this behaviour, you can customise the i18n exception handler. See the
+    upgrading guide or i18n guide for more information.
+
+    *Alex Ghiculescu*
+
+*   `ActiveSupport::CurrentAttributes` now raises if a restricted attribute name is used.
+
+    Attributes such as `set` and `reset` cannot be used as they clash with the
+    `CurrentAttributes` public API.
+
+    *Alex Ghiculescu*
+
+*   `HashWithIndifferentAccess#transform_keys` now takes a Hash argument, just
+    as Ruby's `Hash#transform_keys` does.
+
+    *Akira Matsuda*
+
+*   `delegate` now defines method with proper arity when delegating to a Class.
+    With this change, it defines faster method (3.5x faster with no argument).
+    However, in order to gain this benefit, the delegation target method has to
+    be defined before declaring the delegation.
+
+    ```ruby
+    # This defines 3.5 times faster method than before
+    class C
+      def self.x() end
+      delegate :x, to: :class
+    end
+
+    class C
+      # This works but silently falls back to old behavior because
+      # `delegate` cannot find the definition of `x`
+      delegate :x, to: :class
+      def self.x() end
+    end
+    ```
+
+    *Akira Matsuda*
+
+*   `assert_difference` message now includes what changed.
+
+    This makes it easier to debug non-obvious failures.
+
+    Before:
+
+    ```
+    "User.count" didn't change by 32.
+    Expected: 1611
+      Actual: 1579
+    ```
+
+    After:
+
+    ```
+    "User.count" didn't change by 32, but by 0.
+    Expected: 1611
+      Actual: 1579
+    ```
+
+    *Alex Ghiculescu*
+
+*   Add ability to match exception messages to `assert_raises` assertion
+
+    Instead of this
+    ```ruby
+    error = assert_raises(ArgumentError) do
+      perform_service(param: 'exception')
+    end
+    assert_match(/incorrect param/i, error.message)
+    ```
+
+    you can now write this
+    ```ruby
+    assert_raises(ArgumentError, match: /incorrect param/i) do
+      perform_service(param: 'exception')
+    end
+    ```
+
+    *fatkodima*
+
 *   Add `Rails.env.local?` shorthand for `Rails.env.development? || Rails.env.test?`.
 
     *DHH*

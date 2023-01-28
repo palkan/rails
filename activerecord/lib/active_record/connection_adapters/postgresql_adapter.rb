@@ -66,7 +66,9 @@ module ActiveRecord
         def new_client(conn_params)
           PG.connect(**conn_params)
         rescue ::PG::Error => error
-          if conn_params && conn_params[:dbname] && error.message.include?(conn_params[:dbname])
+          if conn_params && conn_params[:dbname] == "postgres"
+            raise ActiveRecord::ConnectionNotEstablished, error.message
+          elsif conn_params && conn_params[:dbname] && error.message.include?(conn_params[:dbname])
             raise ActiveRecord::NoDatabaseError.db_error(conn_params[:dbname])
           elsif conn_params && conn_params[:user] && error.message.include?(conn_params[:user])
             raise ActiveRecord::DatabaseConnectionError.username_error(conn_params[:user])
@@ -312,6 +314,7 @@ module ActiveRecord
         @max_identifier_length = nil
         @type_map = nil
         @raw_connection = nil
+        @notice_receiver_sql_warnings = []
 
         @use_insert_returning = @config.key?(:insert_returning) ? self.class.type_cast_config_to_boolean(@config[:insert_returning]) : true
       end
@@ -442,9 +445,11 @@ module ActiveRecord
       end
 
       def enable_extension(name, **)
-        exec_query("CREATE EXTENSION IF NOT EXISTS \"#{name}\"").tap {
-          reload_type_map
-        }
+        schema, name = name.to_s.split(".").values_at(-2, -1)
+        sql = +"CREATE EXTENSION IF NOT EXISTS \"#{name}\""
+        sql << " SCHEMA #{schema}" if schema
+
+        exec_query(sql).tap { reload_type_map }
       end
 
       # Removes an extension from the database.
@@ -940,6 +945,13 @@ module ActiveRecord
           end
           self.client_min_messages = @config[:min_messages] || "warning"
           self.schema_search_path = @config[:schema_search_path] || @config[:schema_order]
+
+          @raw_connection.set_notice_receiver do |result|
+            message = result.error_field(PG::Result::PG_DIAG_MESSAGE_PRIMARY)
+            code = result.error_field(PG::Result::PG_DIAG_SQLSTATE)
+            level = result.error_field(PG::Result::PG_DIAG_SEVERITY)
+            @notice_receiver_sql_warnings << SQLWarning.new(message, code, level)
+          end
 
           # Use standard-conforming strings so we don't have to do the E'...' dance.
           set_standard_conforming_strings

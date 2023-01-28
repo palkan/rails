@@ -53,16 +53,21 @@ WARNING: Before you install and use third-party software, make sure you understa
 
 ## Setup
 
-Active Storage uses three tables in your application’s database named
-`active_storage_blobs`, `active_storage_variant_records`
-and `active_storage_attachments`. After creating a new
-application (or upgrading your application to Rails 5.2), run
-`bin/rails active_storage:install` to generate a migration that creates these
-tables. Use `bin/rails db:migrate` to run the migration.
+```bash
+$ bin/rails active_storage:install
+$ bin/rails db:migrate
+```
 
-WARNING: `active_storage_attachments` is a polymorphic join table that stores your model's class name. If your model's class name changes, you will need to run a migration on this table to update the underlying `record_type` to your model's new class name.
+This sets up configuration, and creates the three tables Active Storage uses:
+`active_storage_blobs`, `active_storage_attachments`, and `active_storage_variant_records`.
 
-WARNING: If you are using UUIDs instead of integers as the primary key on your models you will need to change the column type of `active_storage_attachments.record_id` and `active_storage_variant_records.id` in the generated migration accordingly. This can be skipped if you set `Rails.application.config.generators { |g| g.orm :active_record, primary_key_type: :uuid }` in a config file.
+| Table      | Purpose |
+| ------------------- | ----- |
+| `active_storage_blobs` | Stores data about uploaded files, such as filename and content type. |
+| `active_storage_attachments` | A polymorphic join table that [connects your models to blobs](#attaching-files-to-records). If your model's class name changes, you will need to run a migration on this table to update the underlying `record_type` to your model's new class name. |
+| `active_storage_variant_records` | If [variant tracking](#attaching-files-to-records) is enabled, stores records for each variant that has been generated. |
+
+WARNING: If you are using UUIDs instead of integers as the primary key on your models, you should set `Rails.application.config.generators { |g| g.orm :active_record, primary_key_type: :uuid }` in a config file.
 
 Declare Active Storage services in `config/storage.yml`. For each service your
 application uses, provide a name and the requisite configuration. The example
@@ -113,9 +118,6 @@ To use the test service when testing, you add the following to
 config.active_storage.service = :test
 ```
 
-Continue reading for more information on the built-in service adapters (e.g.
-`Disk` and `S3`) and the configuration they require.
-
 NOTE: Configuration files that are environment-specific will take precedence:
 in production, for example, the `config/storage/production.yml` file (if existent)
 will take precedence over the `config/storage.yml` file.
@@ -138,6 +140,9 @@ azure:
   # ...
   container: your_container_name-<%= Rails.env %>
 ```
+
+Continue reading for more information on the built-in service adapters (e.g.
+`Disk` and `S3`) and the configuration they require.
 
 ### Disk Service
 
@@ -176,6 +181,7 @@ amazon:
   retry_limit: 0
   upload:
     server_side_encryption: "" # 'aws:kms' or 'AES256'
+    cache_control: "private, max-age=<%= 1.day.to_i %>"
 ```
 TIP: Set sensible client HTTP timeouts and retry limits for your application. In certain failure scenarios, the default AWS client configuration may cause connections to be held for up to several minutes and lead to request queuing.
 
@@ -346,12 +352,12 @@ gcs: &gcs
 
 private_gcs:
   <<: *gcs
-  credentials: <%= Rails.root.join("path/to/private_keyfile.json") %>
+  credentials: <%= Rails.root.join("path/to/private_key.json") %>
   bucket: ""
 
 public_gcs:
   <<: *gcs
-  credentials: <%= Rails.root.join("path/to/public_keyfile.json") %>
+  credentials: <%= Rails.root.join("path/to/public_key.json") %>
   bucket: ""
   public: true
 ```
@@ -962,7 +968,7 @@ directly from the client to the cloud.
     Or, if you aren't using a `FormBuilder`, add the data attribute directly:
 
     ```erb
-    <input type=file data-direct-upload-url="<%= rails_direct_uploads_url %>" />
+    <input type="file" data-direct-upload-url="<%= rails_direct_uploads_url %>" />
     ```
 
 3. Configure CORS on third-party storage services to allow direct upload requests.
@@ -1414,6 +1420,33 @@ end
 
 [fixtures]: testing.html#the-low-down-on-fixtures
 [`ActiveStorage::FixtureSet`]: https://api.rubyonrails.org/classes/ActiveStorage/FixtureSet.html
+
+### Configuring services
+
+You can add `config/storage/test.yml` to configure services to be used in test environment
+This is useful when the `service` option is used.
+
+```ruby
+class User < ApplicationRecord
+  has_one_attached :avatar, service: :s3
+end
+```
+
+Without `config/storage/test.yml`, the `s3` service configured in `config/storage.yml` is used - even when running tests.
+
+The default configuration would be used and files would be uploaded to the service provider configured in `config/storage.yml`.
+
+In this case, you can add `config/storage/test.yml` and use Disk service for `s3` service to prevent sending requests.
+
+```yaml
+test:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
+
+s3:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
+```
 
 Implementing Support for Other Cloud Services
 ---------------------------------------------

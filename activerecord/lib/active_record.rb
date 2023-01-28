@@ -56,12 +56,12 @@ module ActiveRecord
   autoload :Migrator, "active_record/migration"
   autoload :ModelSchema
   autoload :NestedAttributes
-  autoload :Normalization
   autoload :NoTouching
+  autoload :Normalization
   autoload :Persistence
   autoload :QueryCache
-  autoload :Querying
   autoload :QueryLogs
+  autoload :Querying
   autoload :ReadonlyAttributes
   autoload :RecordInvalid, "active_record/validations"
   autoload :Reflection
@@ -96,10 +96,10 @@ module ActiveRecord
     autoload :AutosaveAssociation
     autoload :ConnectionAdapters
     autoload :DisableJoinsAssociationRelation
-    autoload :Promise
     autoload :FutureResult
     autoload :LegacyYamlAdapter
     autoload :NullRelation
+    autoload :Promise
     autoload :Relation
     autoload :Result
     autoload :StatementCache
@@ -107,13 +107,13 @@ module ActiveRecord
     autoload :Type
 
     autoload_under "relation" do
-      autoload :QueryMethods
-      autoload :FinderMethods
-      autoload :Calculations
-      autoload :PredicateBuilder
-      autoload :SpawnMethods
       autoload :Batches
+      autoload :Calculations
       autoload :Delegation
+      autoload :FinderMethods
+      autoload :PredicateBuilder
+      autoload :QueryMethods
+      autoload :SpawnMethods
     end
   end
 
@@ -196,6 +196,39 @@ module ActiveRecord
   end
 
   self.default_timezone = :utc
+
+  # The action to take when database query produces warning.
+  # Must be one of :ignore, :log, :raise, :report, or a custom proc.
+  # The default is :ignore.
+  singleton_class.attr_reader :db_warnings_action
+
+  def self.db_warnings_action=(action)
+    @db_warnings_action =
+      case action
+      when :ignore
+        nil
+      when :log
+        ->(warning) do
+          warning_message = "[#{warning.class}] #{warning.message}"
+          warning_message += " (#{warning.code})" if warning.code
+          ActiveRecord::Base.logger.warn(warning_message)
+        end
+      when :raise
+        ->(warning) { raise warning }
+      when :report
+        ->(warning) { Rails.error.report(warning, handled: true) }
+      when Proc
+        action
+      else
+        raise ArgumentError, "db_warnings_action must be one of :ignore, :log, :raise, :report, or a custom proc."
+      end
+  end
+
+  self.db_warnings_action = :ignore
+
+  # Specify allowlist of database warnings.
+  singleton_class.attr_accessor :db_warnings_ignore
+  self.db_warnings_ignore = []
 
   singleton_class.attr_accessor :writing_role
   self.writing_role = :writing
@@ -386,6 +419,14 @@ module ActiveRecord
   # an unsafe load if set to true.
   singleton_class.attr_accessor :use_yaml_unsafe_load
   self.use_yaml_unsafe_load = false
+
+  ##
+  # :singleton-method:
+  # Application configurable boolean that denotes whether or not to raise
+  # an exception when the PostgreSQLAdapter is provided with an integer that
+  # is wider than signed 64bit representation
+  singleton_class.attr_accessor :raise_int_wider_than_64bit
+  self.raise_int_wider_than_64bit = true
 
   ##
   # :singleton-method:

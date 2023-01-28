@@ -273,6 +273,11 @@ module ActiveRecord
     end
 
     private
+      def init_internals
+        super
+        @_already_called = nil
+      end
+
       # Returns the record for an association collection that should be validated
       # or saved. If +autosave+ is +false+ only new records will be returned,
       # unless the parent is/was a new record itself.
@@ -501,7 +506,7 @@ module ActiveRecord
 
             if association.updated?
               association_id = record.public_send(reflection.options[:primary_key] || :id)
-              self[reflection.foreign_key] = association_id
+              self[reflection.foreign_key] = association_id unless self[reflection.foreign_key] == association_id
               association.loaded!
             end
 

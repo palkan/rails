@@ -462,6 +462,18 @@ Known extensions: rails, pride
     -p, --pride                      Pride. Show your testing pride!
 ```
 
+### Running tests in Continuous Integration (CI)
+
+To run all tests in a CI environment, there's just one command you need:
+
+```
+bin/rails test
+```
+
+If you are using [System Tests](#system-testing), `bin/rails test` will not run them, since
+they can be slow. To also run them, add an another CI step that runs `bin/rails test:system`,
+or change your first step to `bin/rails test:all`, which runs all tests including system tests.
+
 Parallel Testing
 ----------------
 
@@ -1319,7 +1331,7 @@ cookies["are_good_for_u"]     cookies[:are_good_for_u]
 
 ### Instance Variables Available
 
-You also have access to three instance variables in your functional tests, after a request is made:
+**After** a request is made, you also have access to three instance variables in your functional tests:
 
 * `@controller` - The controller processing the request
 * `@request` - The request object

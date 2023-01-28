@@ -148,8 +148,8 @@ module ActiveRecord
       end
   end
 
-  if current_adapter?(:SQLite3Adapter) && !in_memory_db?
-    class DatabaseTasksCheckProtectedEnvironmentsMultiDatabaseTest < ActiveRecord::TestCase
+  class DatabaseTasksCheckProtectedEnvironmentsMultiDatabaseTest < ActiveRecord::TestCase
+    if current_adapter?(:SQLite3Adapter) && !in_memory_db?
       self.use_transactional_tests = false
 
       def test_with_multiple_databases
@@ -207,8 +207,8 @@ module ActiveRecord
         ensure
           [:primary, :secondary].each do |db|
             ActiveRecord::Base.establish_connection(db)
-            ActiveRecord::Base.connection.schema_migration.drop_table
-            ActiveRecord::Base.connection.internal_metadata.drop_table
+            ActiveRecord::Base.connection.schema_migration.delete_all_versions
+            ActiveRecord::Base.connection.internal_metadata.delete_all_entries
           end
           ActiveRecord::Base.configurations = old_configurations
           ActiveRecord::Base.establish_connection(:arunit)
@@ -995,8 +995,8 @@ module ActiveRecord
       end
   end
 
-  if current_adapter?(:SQLite3Adapter) && !in_memory_db?
-    class DatabaseTasksMigrationTestCase < ActiveRecord::TestCase
+  class DatabaseTasksMigrationTestCase < ActiveRecord::TestCase
+    if current_adapter?(:SQLite3Adapter) && !in_memory_db?
       self.use_transactional_tests = false
       class_attribute :folder_name, default: "valid"
 
@@ -1025,8 +1025,10 @@ module ActiveRecord
           end
         end
     end
+  end
 
-    class DatabaseTasksMigrateTest < DatabaseTasksMigrationTestCase
+  class DatabaseTasksMigrateTest < DatabaseTasksMigrationTestCase
+    if current_adapter?(:SQLite3Adapter) && !in_memory_db?
       def test_migrate_set_and_unset_empty_values_for_verbose_and_version_env_vars
         verbose, version = ENV["VERBOSE"], ENV["VERSION"]
 
@@ -1063,8 +1065,10 @@ module ActiveRecord
         ENV["VERBOSE"], ENV["VERSION"] = verbose, version
       end
     end
+  end
 
-    class DatabaseTasksMigrateScopeTest < DatabaseTasksMigrationTestCase
+  class DatabaseTasksMigrateScopeTest < DatabaseTasksMigrationTestCase
+    if current_adapter?(:SQLite3Adapter) && !in_memory_db?
       self.folder_name = "scope"
 
       def test_migrate_using_scope_and_verbose_mode
@@ -1123,8 +1127,10 @@ module ActiveRecord
         ENV["VERBOSE"], ENV["VERSION"], ENV["SCOPE"] = verbose, version, scope
       end
     end
+  end
 
-    class DatabaseTasksMigrateStatusTest < DatabaseTasksMigrationTestCase
+  class DatabaseTasksMigrateStatusTest < DatabaseTasksMigrationTestCase
+    if current_adapter?(:SQLite3Adapter) && !in_memory_db?
       def setup
         @schema_migration = ActiveRecord::Base.connection.schema_migration
       end
@@ -1136,7 +1142,7 @@ module ActiveRecord
         assert_match(/down    001             Valid people have last names/, output)
         assert_match(/down    002             We need reminders/, output)
         assert_match(/down    003             Innocent jointable/, output)
-        @schema_migration.drop_table
+        @schema_migration.delete_all_versions
       end
 
       private
@@ -1260,8 +1266,8 @@ module ActiveRecord
     end
   end
 
-  unless in_memory_db?
-    class DatabaseTasksTruncateAllTest < ActiveRecord::TestCase
+  class DatabaseTasksTruncateAllTest < ActiveRecord::TestCase
+    unless in_memory_db?
       self.use_transactional_tests = false
 
       fixtures :authors, :author_addresses

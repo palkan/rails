@@ -1,3 +1,64 @@
+*   `ActiveRecord::Relation#explain` now accepts options.
+
+    For databases and adapters which support them (currently PostgreSQL
+    and MySQL), options can be passed to `explain` to provide more
+    detailed query plan analysis:
+
+    ```ruby
+    Customer.where(id: 1).joins(:orders).explain(:analyze, :verbose)
+    ```
+
+    *Reid Lynch*
+
+*   Multiple `Arel::Nodes::SqlLiteral` nodes can now be added together to
+    form `Arel::Nodes::Fragments` nodes. This allows joining several pieces
+    of SQL.
+
+    *Matthew Draper*, *Ole Friis*
+
+*   `ActiveRecord::Base#signed_id` raises if called on a new record
+
+    Previously it would return an ID that was not usable, since it was based on `id = nil`.
+
+    *Alex Ghiculescu*
+
+*   Allow SQL warnings to be reported.
+
+    Active Record configs can be set to enable SQL warning reporting.
+
+    ```ruby
+    # Configure action to take when SQL query produces warning
+    config.active_record.db_warnings_action = :raise
+
+    # Configure allowlist of warnings that should always be ignored
+    config.active_record.db_warnings_ignore = [
+      /Invalid utf8mb4 character string/,
+      "An exact warning message",
+    ]
+    ```
+
+    This is supported for the MySQL and PostgreSQL adapters.
+
+    *Adrianna Chang*, *Paarth Madan*
+
+*   Add `#regroup` query method as a short-hand for `.unscope(:group).group(fields)`
+
+    Example:
+
+    ```ruby
+    Post.group(:title).regroup(:author)
+    # SELECT `posts`.`*` FROM `posts` GROUP BY `posts`.`author`
+    ```
+
+    *Danielius Visockas*
+
+*   PostgreSQL adapter method `enable_extension` now allows parameter to be `[schema_name.]<extension_name>`
+    if the extension must be installed on another schema.
+
+    Example: `enable_extension('heroku_ext.hstore')`
+
+    *Leonardo Luarte*
+
 *   `ActiveRecord::Relation`’s `#any?`, `#none?`, and `#one?` methods take an optional pattern
     argument, more closely matching their `Enumerable` equivalents.
 

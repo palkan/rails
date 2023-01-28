@@ -1,4 +1,96 @@
-*   Bump `required_rubygems_version` to 3.3.13 or higher
+*   Credentials commands (e.g. `bin/rails credentials:edit`) now respect
+    `config.credentials.content_path` and `config.credentials.key_path` when set
+    in `config/application.rb`.
+
+    Before:
+
+      * `bin/rails credentials:edit` ignored `RAILS_ENV`, and would always edit
+        `config/credentials.yml.enc`.
+
+      * `bin/rails credentials:edit --environment foo` would create and edit
+        `config/credentials/foo.yml.enc`.
+
+      * If `config.credentials.content_path` or `config.credentials.key_path`
+        was set, `bin/rails credentials:edit` could not be used to edit the
+        credentials.  Editing credentials required using `bin/rails
+        encrypted:edit path/to/credentials --key path/to/key`.
+
+    After:
+
+      * `bin/rails credentials:edit` will edit the credentials file that the app
+        would load for the current `RAILS_ENV`.
+
+      * `bin/rails credentials:edit` respects `config.credentials.content_path`
+        and `config.credentials.key_path` when set in `config/application.rb`.
+        Using `RAILS_ENV`, environment-specific paths can be set, such as:
+
+          ```ruby
+          # config/application.rb
+          module MyCoolApp
+            class Application < Rails::Application
+              config.credentials.content_path = "my_credentials/#{Rails.env}.yml.enc"
+
+              config.credentials.key_path = "path/to/production.key" if Rails.env.production?
+            end
+          end
+          ```
+
+      * `bin/rails credentials:edit --environment foo` will create and edit
+        `config/credentials/foo.yml.enc` _if_ `config.credentials.content_path`
+        has not been set for the `foo` environment.  Ultimately, it will edit
+        the credentials file that the app would load for the `foo` environment.
+
+    *Jonathan Hefner*
+
+*   Add descriptions for non-Rake commands when running `rails -h`.
+
+    *Petrik de Heus*
+
+*   Show relevant commands when calling help
+
+    When running `rails -h` or just `rails` outside a Rails application,
+    Rails outputs all options for running the `rails new` command. This can be
+    confusing to users when they probably want to see the common Rails commands.
+
+    Instead, we should always show the common commands when running `rails -h`
+    inside or outside a Rails application.
+
+    As the relevant commands inside a Rails application differ from the
+    commands outside an application, the help USAGE file has been split to
+    show the most relevant commands for the context.
+
+    *Petrik de Heus*
+
+*   Add Rails::HealthController#show and map it to /up for newly generated applications.
+    Load balancers and uptime monitors all need a basic endpoint to tell whether the app is up.
+    This is a good starting point that'll work in many situations.
+
+    *DHH*
+
+*   Only use HostAuthorization middleware if `config.hosts` is not empty
+
+    *Hartley McGuire*
+
+*   Raise an exception when a `before_action`'s "only" or "except" filter
+    options reference an action that doesn't exist. This will be enabled by
+    default but can be overridden via config.
+
+    ```
+    # config/environments/production.rb
+    config.action_controller.raise_on_missing_callback_actions = false
+    ```
+
+    *Jess Bees*
+
+*   Use physical processor count as the default Puma worker count in production.
+    This can be overridden by setting `ENV["WEB_CONCURRENCY"]` or editing the
+    generated "config/puma.rb" directly.
+
+    *DHH*
+
+*   Bump `required_rubygems_version` from 1.8.11 to 3.3.13 or higher in order to
+    support pre-release versions of Ruby when generating a new Rails app
+    Gemfile.
 
     *Yasuo Honda*
 
@@ -28,7 +120,7 @@
     docker buildx build --push --platform=linux/amd64,linux/arm64 -t <user/image> .
     ```
 
-    *DHH*
+    *DHH, Sam Ruby*
 
 *   Add ENV["SECRET_KEY_BASE_DUMMY"] for starting production environment with a generated secret base key,
     which can be used to run tasks like `assets:precompile` without making the RAILS_MASTER_KEY available
@@ -436,5 +528,14 @@
     support Internet Explorer this header should not be a default one.
 
     *Harun Sabljaković*
+
+*   Add .node-version files for Rails apps that use Node.js
+
+    Node version managers that make use of this file:
+      https://github.com/shadowspawn/node-version-usage#node-version-file-usage
+
+    The generated Dockerfile will use the same node version.
+
+    *Sam Ruby*
 
 Please check [7-0-stable](https://github.com/rails/rails/blob/7-0-stable/railties/CHANGELOG.md) for previous changes.

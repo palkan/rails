@@ -1,3 +1,28 @@
+*   Add HTTP::Request#route_uri_pattern that returns URI pattern of matched route.
+
+    *Joel Hawksley*, *Kate Higa*
+
+*   Add `ActionDispatch::AssumeSSL` middleware that can be turned on via `config.assume_ssl`.
+    It makes the application believe that all requests are arring over SSL. This is useful
+    when proxying through a load balancer that terminates SSL, the forwarded request will appear
+    as though its HTTP instead of HTTPS to the application. This makes redirects and cookie
+    security target HTTP instead of HTTPS. This middleware makes the server assume that the
+    proxy already terminated SSL, and that the request really is HTTPS.
+
+    *DHH*
+
+*   Only use HostAuthorization middleware if `config.hosts` is not empty
+
+    *Hartley McGuire*
+
+*   Allow raising an error when a callback's only/unless symbols aren't existing methods.
+
+    When `before_action :callback, only: :action_name` is declared on a controller that doesn't respond to `action_name`, raise an exception at request time. This is a safety measure to ensure that typos or forgetfulness don't prevent a crucial callback from being run when it should.
+
+    For new applications, raising an error for undefined actions is turned on by default. If you do not want to opt-in to this behavior set `config.action_pack.raise_on_missing_callback_actions` to `false` in your application configuration. See #43487 for more details.
+
+    *Jess Bees*
+
 *   Allow cookie options[:domain] to accept a proc to set the cookie domain on a more flexible per-request basis
 
     *RobL*

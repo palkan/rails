@@ -15,6 +15,7 @@ After reading this guide, you will know:
 * How to stream data directly to the user's browser.
 * How to filter sensitive parameters, so they do not appear in the application's log.
 * How to deal with exceptions that may be raised during request processing.
+* About the built-in health check end-point useful for load balancers and uptime monitors.
 
 --------------------------------------------------------------------------------
 
@@ -680,10 +681,10 @@ If you use the cookie session store, this would apply to the `session` and
 
 [`cookies`]: https://api.rubyonrails.org/classes/ActionController/Cookies.html#method-i-cookies
 
-Rendering XML and JSON Data
----------------------------
+Rendering
+---------
 
-ActionController makes it extremely easy to render `XML` or `JSON` data. If you've generated a controller using scaffolding, it would look something like this:
+ActionController makes it extremely easy to render `HTML`, `XML` or `JSON` data. If you've generated a controller using scaffolding, it would look something like this:
 
 ```ruby
 class UsersController < ApplicationController
@@ -700,6 +701,9 @@ end
 
 You may notice in the above code that we're using `render xml: @users`, not `render xml: @users.to_xml`. If the object is not a String, then Rails will automatically invoke `to_xml` for us.
 
+You can learn more about rendering in the [Layouts and Rendering
+Guide](layouts_and_rendering.html).
+
 Filters
 -------
 
@@ -714,13 +718,12 @@ class ApplicationController < ActionController::Base
   before_action :require_login
 
   private
-
-  def require_login
-    unless logged_in?
-      flash[:error] = "You must be logged in to access this section"
-      redirect_to new_login_url # halts request cycle
+    def require_login
+      unless logged_in?
+        flash[:error] = "You must be logged in to access this section"
+        redirect_to new_login_url # halts request cycle
+      end
     end
-  end
 end
 ```
 
@@ -757,16 +760,15 @@ class ChangesController < ApplicationController
   around_action :wrap_in_transaction, only: :show
 
   private
-
-  def wrap_in_transaction
-    ActiveRecord::Base.transaction do
-      begin
-        yield
-      ensure
-        raise ActiveRecord::Rollback
+    def wrap_in_transaction
+      ActiveRecord::Base.transaction do
+        begin
+          yield
+        ensure
+          raise ActiveRecord::Rollback
+        end
       end
     end
-  end
 end
 ```
 
@@ -1283,3 +1285,22 @@ via HTTPS, you should do so by enabling the [`ActionDispatch::SSL`][] middleware
 
 [`config.force_ssl`]: configuring.html#config-force-ssl
 [`ActionDispatch::SSL`]: https://api.rubyonrails.org/classes/ActionDispatch/SSL.html
+
+Built-in Health Check Endpoint
+------------------------------
+
+Rails also comes with a built-in health check endpoint that is reachable at the `/up` path. This endpoint will return a 200 status code if the app has booted with no exceptions, and a 500 status code otherwise.
+
+In production, many services are required to report their status upstream, whether it's to an uptime monitor that will page an engineer when things go wrong, or a load balancer or Kubernetes controller used to determine a pod's health. This health check is designed to be a one-size fits all that will work in many situations.
+
+While any newly generated Rails applications will have the health check at `/up`, you can configure the path to be anything you'd like in your "config/routes.rb":
+
+```ruby
+Rails.application.routes.draw do
+  get "healthz" => "rails/health#show"
+end
+```
+
+The health check will now be accessible via the `/healthz` path.
+
+NOTE: This endpoint is not designed to give the status of all of your service's dependencies, such as the database or redis cluster. It is also not recommended to use those for health checks, in general, as it can lead to situations where your application is being restarted due to a third-party service going bad. Ideally, you should design your application to handle those outages gracefully.

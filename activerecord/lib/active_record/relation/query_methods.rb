@@ -446,6 +446,27 @@ module ActiveRecord
       self
     end
 
+    # Allows you to change a previously set group statement.
+    #
+    #   Post.group(:title, :body)
+    #   # SELECT `posts`.`*` FROM `posts` GROUP BY `posts`.`title`, `posts`.`body`
+    #
+    #   Post.group(:title, :body).regroup(:title)
+    #   # SELECT `posts`.`*` FROM `posts` GROUP BY `posts`.`title`
+    #
+    # This is short-hand for <tt>unscope(:group).group(fields)</tt>.
+    # Note that we're unscoping the entire group statement.
+    def regroup(*args)
+      check_if_method_has_arguments!(__callee__, args)
+      spawn.regroup!(*args)
+    end
+
+    # Same as #regroup but operates on relation in-place instead of copying.
+    def regroup!(*args) # :nodoc:
+      self.group_values = args
+      self
+    end
+
     # Applies an <code>ORDER BY</code> clause to a query.
     #
     # #order accepts arguments in one of several formats.
@@ -1309,6 +1330,8 @@ module ActiveRecord
     #   # SELECT "users"."name" FROM "users" /* selecting */ /* user */ /* names */
     #
     # The SQL block comment delimiters, "/*" and "*/", will be added automatically.
+    #
+    # Some escaping is performed, however untrusted user input should not be used.
     def annotate(*args)
       check_if_method_has_arguments!(__callee__, args)
       spawn.annotate!(*args)

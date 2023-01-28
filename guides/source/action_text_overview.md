@@ -98,6 +98,10 @@ And finally, display the sanitized rich text on a page:
 <%= @message.content %>
 ```
 
+NOTE: If there's an attached resource within `content` field, it might not show properly unless you
+have *libvips/libvips42* package installed locally on your machine.
+Check their [install docs](https://www.libvips.org/install.html) on how to get it.
+
 To accept the rich text content, all you have to do is permit the referenced attribute:
 
 ```ruby
@@ -124,7 +128,7 @@ By default, Action Text will render rich text content inside an element with the
 ```
 
 Elements with this class, as well as the Action Text editor, are styled by the
-[`trix` stylesheet](https://raw.githubusercontent.com/basecamp/trix/master/dist/trix.css).
+[`trix` stylesheet](https://unpkg.com/trix/dist/trix.css).
 To provide your own styles instead, remove the `= require trix` line from the
 `app/assets/stylesheets/actiontext.css` stylesheet created by the installer.
 
